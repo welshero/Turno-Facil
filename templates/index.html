@@ -1,19 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+
 <head>
-    <title>{{ title }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Turno Fácil - Consulta sencilla de disponibilidad de turnos médicos."
+    >
+
+    <title>Turno Fácil | Turnos médicos</title>
+
+
+    <!-- FUENTE -->
+
+    <link rel="preconnect"
+          href="https://fonts.googleapis.com">
+
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+
+    <!-- CSS -->
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
 
 <body>
-    <div class="App">
-        <header class="App-header">
-            <img src="{{ url_for('static', filename='Octocat.png') }}" class="App-logo" alt="logo" />
-            <p>
-                GitHub Codespaces <span class="heart">♥️</span> Flask
-            </p>
-            <p class="small">
-                Edit <code>templates/index.html</code> and refresh to see your changes!
-            </p>
-        </header>
+
+
+<!-- ======================================================
+     HEADER
+======================================================= -->
+
+<header class="header">
+
+    <div class="header-container">
+
+
+        <a href="/" class="logo">
+
+            <div class="logo-icon">
+                +
+            </div>
+
+            <div class="logo-text">
+
+                <span>
+                    Turno
+                </span>
+
+                <span class="logo-highlight">
+                    Fácil
+                </span>
+
+            </div>
+
+        </a>
+
+
+        <div class="header-status">
+
+            <span class="status-dot"></span>
+
+            <span>
+                Sistema activo
+            </span>
+
+        </div>
+
+
     </div>
+
+</header>
+
+
+<!-- ======================================================
+     HERO
+======================================================= -->
+
+<main>
+
+
+<section class="hero">
+
+    <div class="hero-container">
+
+
+        <!-- TEXTO -->
+
+        <div class="hero-content">
+
+
+            <div class="hero-badge">
+
+                <span>🏥</span>
+
+                Hospital Sganotti
+
+            </div>
+
+
+            <h1>
+
+                Encontrá tu turno
+
+                <span>
+                    sin complicaciones.
+                </span>
+
+            </h1>
+
+
+            <p class="hero-description">
+
+                Elegí la especialidad que necesitás
+                y consultá rápidamente si hay turnos
+                disponibles.
+
+            </p>
+
+
+            <div class="hero-features">
+
+                <div>
+                    ✓ Todas las especialidades
+                </div>
+
+                <div>
+                    ✓ Información actualizada
+                </div>
+
+                <div>
+                    ✓ Diseño fácil de usar
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- ==================================================
+             TARJETA
+        =================================================== -->
+
+        <div class="turn-card">
+
+
+            <!-- CABECERA -->
+
+            <div class="turn-card-header">
+
+                <div>
+
+                    <p class="card-label">
+                        BUSCAR TURNO
+                    </p>
+
+                    <h2>
+                        ¿Qué especialidad necesitás?
+                    </h2>
+
+                </div>
+
+
+                <div class="medical-icon">
+                    ⚕
+                </div>
+
+            </div>
+
+
+            <!-- BUSCADOR -->
+
+            <div class="search-container">
+
+                <label for="buscador">
+                    Buscar especialidad
+                </label>
+
+
+                <div class="search-box">
+
+                    <span>
+                        🔎
+                    </span>
+
+                    <input
+                        type="text"
+                        id="buscador"
+                        placeholder="Ej. Cardiología"
+                        autocomplete="off"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- SELECT -->
+
+            <div class="select-container">
+
+                <label for="especialidad-select">
+                    Seleccionar especialidad
+                </label>
+
+
+                <div class="select-wrapper">
+
+                    <select
+                        id="especialidad-select"
+                    >
+
+                        <option value="">
+                            Cargando especialidades...
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <!-- RESULTADO -->
+
+            <div
+                id="estado-container"
+                class="status-box neutral"
+            >
+
+                <div class="status-icon">
+                    🔎
+                </div>
+
+                <div>
+
+                    <strong>
+                        Seleccioná una especialidad
+                    </strong>
+
+                    <span>
+                        Te mostraremos si hay turnos disponibles.
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- INFORMACIÓN -->
+
+            <div class="turn-info">
+
+
+                <div class="info-item">
+
+                    <span class="info-icon">
+                        👥
+                    </span>
+
+                    <div>
+
+                        <span class="info-label">
+                            CUPOS
+                        </span>
+
+                        <strong id="cupos">
+                            —
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="info-item">
+
+                    <span class="info-icon">
+                        🕐
+                    </span>
+
+                    <div>
+
+                        <span class="info-label">
+                            ACTUALIZADO
+                        </span>
+
+                        <strong id="ultima-actualizacion">
+                            —
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- BOTÓN -->
+
+            <a
+                id="boton-turno"
+                href="https://sganotti.mendoza.gov.ar/digisalud/comunicacion/OfertaAtencion.aspx"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="main-button disabled"
+            >
+
+                <span>
+                    📅
+                </span>
+
+                Solicitar turno
+
+                <span class="button-arrow">
+                    →
+                </span>
+
+            </a>
+
+
+            <!-- ACTUALIZAR -->
+
+            <button
+                id="boton-actualizar"
+                class="update-button"
+                type="button"
+            >
+
+                <span id="refresh-icon">
+                    ↻
+                </span>
+
+                Actualizar estado
+
+            </button>
+
+
+            <!-- ESTADO DE CARGA -->
+
+            <div
+                id="cargando-especialidades"
+                class="loading-text"
+            >
+
+                <span class="small-spinner"></span>
+
+                Cargando especialidades...
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ======================================================
+     COMO FUNCIONA
+======================================================= -->
+
+<section class="how-section">
+
+    <div class="section-container">
+
+
+        <div class="section-heading">
+
+            <span class="section-tag">
+                ¿CÓMO FUNCIONA?
+            </span>
+
+            <h2>
+                Más simple, más fácil.
+            </h2>
+
+            <p>
+
+                Turno Fácil está pensado para que cualquier
+                persona pueda consultar la disponibilidad
+                de turnos sin complicaciones.
+
+            </p>
+
+        </div>
+
+
+        <div class="steps">
+
+
+            <div class="step-card">
+
+                <div class="step-number">
+                    01
+                </div>
+
+                <div class="step-icon">
+                    🔎
+                </div>
+
+                <h3>
+                    Elegí
+                </h3>
+
+                <p>
+
+                    Buscá y seleccioná la especialidad
+                    médica que necesitás.
+
+                </p>
+
+            </div>
+
+
+            <div class="step-card">
+
+                <div class="step-number">
+                    02
+                </div>
+
+                <div class="step-icon">
+                    📊
+                </div>
+
+                <h3>
+                    Consultá
+                </h3>
+
+                <p>
+
+                    La aplicación consulta la información
+                    disponible y muestra el estado de los turnos.
+
+                </p>
+
+            </div>
+
+
+            <div class="step-card">
+
+                <div class="step-number">
+                    03
+                </div>
+
+                <div class="step-icon">
+                    📅
+                </div>
+
+                <h3>
+                    Solicitá
+                </h3>
+
+                <p>
+
+                    Si hay disponibilidad, ingresá al sitio
+                    oficial del hospital para solicitar tu turno.
+
+                </p>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ======================================================
+     ACCESIBILIDAD
+======================================================= -->
+
+<section class="accessibility-section">
+
+    <div class="section-container">
+
+
+        <div class="accessibility-card">
+
+
+            <div class="accessibility-icon">
+                ♿
+            </div>
+
+
+            <div>
+
+                <span class="section-tag">
+                    PENSADO PARA VOS
+                </span>
+
+
+                <h2>
+                    Una página fácil de usar.
+                </h2>
+
+
+                <p>
+
+                    Diseñamos Turno Fácil pensando especialmente
+                    en personas que pueden tener dificultades
+                    para utilizar sistemas de turnos online.
+                    Botones grandes, información clara y una
+                    navegación sencilla.
+
+                </p>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ======================================================
+     AVISO
+======================================================= -->
+
+<section class="notice-section">
+
+    <div class="section-container">
+
+
+        <div class="notice">
+
+
+            <div class="notice-icon">
+                ℹ
+            </div>
+
+
+            <div>
+
+                <strong>
+                    Importante
+                </strong>
+
+
+                <p>
+
+                    Turno Fácil informa sobre la disponibilidad.
+                    La solicitud y confirmación del turno se
+                    realizan directamente en el sitio oficial
+                    del hospital.
+
+                </p>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+</main>
+
+
+<!-- ======================================================
+     FOOTER
+======================================================= -->
+
+<footer class="footer">
+
+    <div class="footer-container">
+
+
+        <div>
+
+            <div class="footer-logo">
+
+                Turno
+                <span>Fácil</span>
+
+            </div>
+
+
+            <p>
+
+                Una forma más sencilla de encontrar
+                tu turno médico.
+
+            </p>
+
+        </div>
+
+
+        <div class="footer-right">
+
+            <span>
+                Proyecto académico
+            </span>
+
+            <span>
+                © 2026 Turno Fácil
+            </span>
+
+        </div>
+
+
+    </div>
+
+</footer>
+
+
+<!-- JAVASCRIPT -->
+
+<script
+    src="{{ url_for('static', filename='js/app.js') }}"
+></script>
+
+
 </body>
 
 </html>
