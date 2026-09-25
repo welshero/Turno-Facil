@@ -1,17 +1,87 @@
-/* =========================================================
-   TURNO FÁCIL
-   JavaScript principal
-========================================================= */
+// ============================================================
+// CONFIGURACIÓN
+// ============================================================
 
+const API_ESPECIALIDADES = "/api/especialidades";
+const API_TURNOS = "/api/turnos";
+
+const INTERVALO_ACTUALIZACION = 60000; // 60 segundos
+
+
+// ============================================================
+// ELEMENTOS DEL DOM
+// ============================================================
+
+const buscador =
+    document.getElementById("buscador");
+
+const limpiarBusqueda =
+    document.getElementById("limpiarBusqueda");
+
+const listaEspecialidades =
+    document.getElementById("listaEspecialidades");
+
+const sinResultados =
+    document.getElementById("sinResultados");
+
+const contadorEspecialidades =
+    document.getElementById("contadorEspecialidades");
+
+const estadoConexion =
+    document.getElementById("estadoConexion");
+
+const resultado =
+    document.getElementById("resultado");
+
+const resultadoNombre =
+    document.getElementById("resultadoNombre");
+
+const estadoBadge =
+    document.getElementById("estadoBadge");
+
+const estadoIcon =
+    document.getElementById("estadoIcon");
+
+const estadoTitulo =
+    document.getElementById("estadoTitulo");
+
+const estadoMensaje =
+    document.getElementById("estadoMensaje");
+
+const cantidadCupos =
+    document.getElementById("cantidadCupos");
+
+const ultimaActualizacion =
+    document.getElementById("ultimaActualizacion");
+
+const errorApi =
+    document.getElementById("errorApi");
+
+const mensajeError =
+    document.getElementById("mensajeError");
+
+const reintentar =
+    document.getElementById("reintentar");
+
+const whatsappPremium =
+    document.getElementById("whatsappPremium");
+
+const premiumMensaje =
+    document.getElementById("premiumMensaje");
+
+
+// ============================================================
+// VARIABLES
+// ============================================================
 
 let especialidades = [];
 
 let especialidadSeleccionada = "";
 
 
-/* =========================================================
-   INICIO
-========================================================= */
+// ============================================================
+// INICIO
+// ============================================================
 
 document.addEventListener(
     "DOMContentLoaded",
@@ -19,328 +89,147 @@ document.addEventListener(
 
         cargarEspecialidades();
 
-
-        /*
-        -----------------------------------------------------
-        BUSCADOR
-        -----------------------------------------------------
-        */
-
-        const buscador =
-            document.getElementById(
-                "buscador"
-            );
-
-
-        if (buscador) {
-
-            buscador.addEventListener(
-                "input",
-                filtrarEspecialidades
-            );
-
-        }
-
-
-        /*
-        -----------------------------------------------------
-        SELECT
-        -----------------------------------------------------
-        */
-
-        const select =
-            document.getElementById(
-                "especialidad-select"
-            );
-
-
-        if (select) {
-
-            select.addEventListener(
-                "change",
-                seleccionarEspecialidad
-            );
-
-        }
-
-
-        /*
-        -----------------------------------------------------
-        BOTÓN ACTUALIZAR
-        -----------------------------------------------------
-        */
-
-        const boton =
-            document.getElementById(
-                "boton-actualizar"
-            );
-
-
-        if (boton) {
-
-            boton.addEventListener(
-                "click",
-                () => {
-
-                    if (
-                        especialidadSeleccionada
-                    ) {
-
-                        consultarTurnos(
-                            true
-                        );
-
-                    } else {
-
-                        cargarEspecialidades(
-                            true
-                        );
-
-                    }
-
-                }
-            );
-
-        }
-
-
-        /*
-        -----------------------------------------------------
-        ACTUALIZACIÓN AUTOMÁTICA
-        -----------------------------------------------------
-
-        Cada 60 segundos se vuelve a consultar
-        la especialidad seleccionada.
-        */
-
-        setInterval(
-            () => {
-
-                if (
-                    especialidadSeleccionada
-                ) {
-
-                    consultarTurnos(
-                        false
-                    );
-
-                }
-
-            },
-            60000
-        );
+        configurarEventos();
 
     }
 );
 
 
-/* =========================================================
-   CARGAR TODAS LAS ESPECIALIDADES
-========================================================= */
+// ============================================================
+// EVENTOS
+// ============================================================
 
-async function cargarEspecialidades(
-    mostrarCarga = false
-) {
+function configurarEventos() {
 
-    const select =
-        document.getElementById(
-            "especialidad-select"
-        );
+    buscador.addEventListener(
+        "input",
+        filtrarEspecialidades
+    );
 
-    const loading =
-        document.getElementById(
-            "cargando-especialidades"
-        );
+    limpiarBusqueda.addEventListener(
+        "click",
+        () => {
 
+            buscador.value = "";
 
-    if (select) {
+            filtrarEspecialidades();
 
-        select.disabled = true;
+            buscador.focus();
 
-        select.innerHTML = `
+        }
+    );
 
-            <option value="">
-                Cargando especialidades...
-            </option>
+    reintentar.addEventListener(
+        "click",
+        cargarEspecialidades
+    );
 
-        `;
-
-    }
+}
 
 
-    if (loading) {
+// ============================================================
+// CARGAR ESPECIALIDADES
+// ============================================================
 
-        loading.style.display =
-            "flex";
+async function cargarEspecialidades() {
 
-    }
+    mostrarCargando();
 
+    actualizarConexion(
+        "loading",
+        "● Conectando..."
+    );
 
     try {
 
         const respuesta =
-            await fetch(
-                "/api/especialidades"
-            );
-
-
-        if (!respuesta.ok) {
-
-            throw new Error(
-                "No se pudieron cargar las especialidades."
-            );
-
-        }
-
+            await fetch(API_ESPECIALIDADES);
 
         const datos =
             await respuesta.json();
 
-
-        if (!datos.ok) {
+        if (!respuesta.ok || !datos.ok) {
 
             throw new Error(
-                datos.mensaje
+                datos.error ||
+                "No se pudo obtener la información."
             );
 
         }
-
 
         especialidades =
             datos.especialidades || [];
 
+        actualizarConexion(
+            "online",
+            "● API conectada"
+        );
 
-        llenarSelect(
+        contadorEspecialidades.textContent =
+            `${especialidades.length} especialidades disponibles`;
+
+        ocultarError();
+
+        renderizarEspecialidades(
             especialidades
         );
 
-
-        console.log(
-            `Se cargaron ${especialidades.length} especialidades.`
-        );
-
+        restaurarEspecialidad();
 
     } catch (error) {
 
-        console.error(
-            error
+        console.error(error);
+
+        actualizarConexion(
+            "offline",
+            "● Servicio no disponible"
         );
-
-
-        if (select) {
-
-            select.innerHTML = `
-
-                <option value="">
-                    Error al cargar especialidades
-                </option>
-
-            `;
-
-        }
-
 
         mostrarError(
-            "No pudimos cargar las especialidades.",
-            "Intentá actualizar nuevamente."
+            "No pudimos obtener las especialidades. "
+            + "El servicio del hospital puede estar temporalmente "
+            + "no disponible."
         );
-
-
-    } finally {
-
-        if (select) {
-
-            select.disabled = false;
-
-        }
-
-
-        if (loading) {
-
-            loading.style.display =
-                "none";
-
-        }
 
     }
 
 }
 
 
-/* =========================================================
-   LLENAR SELECT
-========================================================= */
+// ============================================================
+// RENDERIZAR ESPECIALIDADES
+// ============================================================
 
-function llenarSelect(
+function renderizarEspecialidades(
     lista
 ) {
 
-    const select =
-        document.getElementById(
-            "especialidad-select"
+    listaEspecialidades.innerHTML = "";
+
+    sinResultados.classList.add(
+        "hidden"
+    );
+
+    if (!lista.length) {
+
+        sinResultados.classList.remove(
+            "hidden"
         );
-
-
-    if (!select) {
 
         return;
 
     }
-
-
-    select.innerHTML = "";
-
-
-    /*
-    ---------------------------------------------------------
-    OPCIÓN INICIAL
-    ---------------------------------------------------------
-    */
-
-    const opcionInicial =
-        document.createElement(
-            "option"
-        );
-
-
-    opcionInicial.value = "";
-
-    opcionInicial.textContent =
-        "Seleccioná una especialidad";
-
-
-    select.appendChild(
-        opcionInicial
-    );
-
-
-    /*
-    ---------------------------------------------------------
-    AGREGAR ESPECIALIDADES
-    ---------------------------------------------------------
-    */
 
     lista.forEach(
         especialidad => {
 
-            const option =
-                document.createElement(
-                    "option"
+            const card =
+                crearTarjetaEspecialidad(
+                    especialidad
                 );
 
-
-            option.value =
-                especialidad.descripcion;
-
-
-            option.textContent =
-                capitalizarTexto(
-                    especialidad.descripcion
-                );
-
-
-            select.appendChild(
-                option
+            listaEspecialidades.appendChild(
+                card
             );
 
         }
@@ -349,569 +238,502 @@ function llenarSelect(
 }
 
 
-/* =========================================================
-   FILTRAR ESPECIALIDADES
-========================================================= */
+// ============================================================
+// CREAR TARJETA
+// ============================================================
 
-function filtrarEspecialidades(
-    evento
+function crearTarjetaEspecialidad(
+    especialidad
 ) {
 
-    const texto =
-        evento.target.value
-            .trim()
-            .toLowerCase();
+    const card =
+        document.createElement("button");
 
+    card.type = "button";
 
-    const resultados =
-        especialidades.filter(
-            especialidad => {
-
-                return especialidad.descripcion
-                    .toLowerCase()
-                    .includes(texto);
-
-            }
-        );
-
-
-    llenarSelect(
-        resultados
-    );
-
-
-    /*
-    Si hay exactamente una coincidencia,
-    la seleccionamos automáticamente.
-    */
+    card.className =
+        "specialty-card";
 
     if (
-        resultados.length === 1 &&
-        texto.length >= 3
+        especialidadSeleccionada &&
+        especialidad.descripcion ===
+        especialidadSeleccionada
     ) {
 
-        const select =
-            document.getElementById(
-                "especialidad-select"
-            );
-
-
-        select.value =
-            resultados[0].descripcion;
+        card.classList.add(
+            "active"
+        );
 
     }
+
+    const estado =
+        obtenerEstadoEspecialidad(
+            especialidad
+        );
+
+    card.innerHTML = `
+
+        <div class="specialty-card-name">
+            ${escaparHTML(
+                especialidad.descripcion
+            )}
+        </div>
+
+        <div class="specialty-card-status">
+
+            <span
+                class="status-dot ${estado.clase}"
+            ></span>
+
+            <span>
+                ${estado.texto}
+            </span>
+
+        </div>
+
+    `;
+
+    card.addEventListener(
+        "click",
+        () => {
+
+            seleccionarEspecialidad(
+                especialidad.descripcion
+            );
+
+        }
+    );
+
+    return card;
 
 }
 
 
-/* =========================================================
-   SELECCIONAR ESPECIALIDAD
-========================================================= */
+// ============================================================
+// ESTADO DE ESPECIALIDAD
+// ============================================================
 
-function seleccionarEspecialidad(
-    evento
+function obtenerEstadoEspecialidad(
+    especialidad
 ) {
 
-    const nombre =
-        evento.target.value;
+    if (especialidad.suspendido) {
 
+        return {
+            texto: "Suspendida",
+            clase: "suspended"
+        };
+
+    }
+
+    if (
+        Number(especialidad.cupo) > 0
+    ) {
+
+        if (
+            Number(especialidad.cupo) <= 5
+        ) {
+
+            return {
+                texto: "Pocos cupos",
+                clase: "warning"
+            };
+
+        }
+
+        return {
+            texto: "Disponibilidad",
+            clase: "available"
+        };
+
+    }
+
+    return {
+        texto: "Sin cupos",
+        clase: ""
+    };
+
+}
+
+
+// ============================================================
+// FILTRAR
+// ============================================================
+
+function filtrarEspecialidades() {
+
+    const texto =
+        buscador.value
+            .trim()
+            .toLowerCase();
+
+    const filtradas =
+        especialidades.filter(
+            especialidad =>
+                especialidad.descripcion
+                    .toLowerCase()
+                    .includes(texto)
+        );
+
+    renderizarEspecialidades(
+        filtradas
+    );
+
+}
+
+
+// ============================================================
+// SELECCIONAR ESPECIALIDAD
+// ============================================================
+
+async function seleccionarEspecialidad(
+    nombre
+) {
 
     especialidadSeleccionada =
         nombre;
 
+    localStorage.setItem(
+        "turnoFacilEspecialidad",
+        nombre
+    );
 
-    if (!nombre) {
+    actualizarTarjetasActivas();
 
-        mostrarEstadoInicial();
+    buscador.value =
+        nombre;
 
-        return;
+    ocultarError();
 
-    }
+    resultado.classList.remove(
+        "hidden"
+    );
 
+    resultado.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
 
-    consultarTurnos(
-        true
+    mostrarResultadoCargando();
+
+    actualizarWhatsApp(
+        nombre
+    );
+
+    await consultarTurnos(
+        nombre
     );
 
 }
 
 
-/* =========================================================
-   CONSULTAR TURNOS
-========================================================= */
+// ============================================================
+// CONSULTAR TURNOS
+// ============================================================
 
 async function consultarTurnos(
-    mostrarCarga = true
+    nombre
 ) {
-
-    if (!especialidadSeleccionada) {
-
-        return;
-
-    }
-
-
-    const estado =
-        document.getElementById(
-            "estado-container"
-        );
-
-
-    const cupos =
-        document.getElementById(
-            "cupos"
-        );
-
-
-    const ultima =
-        document.getElementById(
-            "ultima-actualizacion"
-        );
-
-
-    const boton =
-        document.getElementById(
-            "boton-turno"
-        );
-
-
-    const refresh =
-        document.getElementById(
-            "refresh-icon"
-        );
-
-
-    /*
-    ---------------------------------------------------------
-    ANIMACIÓN
-    ---------------------------------------------------------
-    */
-
-    if (refresh) {
-
-        refresh.classList.add(
-            "rotating"
-        );
-
-    }
-
-
-    /*
-    ---------------------------------------------------------
-    MOSTRAR CARGA
-    ---------------------------------------------------------
-    */
-
-    if (
-        mostrarCarga &&
-        estado
-    ) {
-
-        estado.className =
-            "status-box neutral";
-
-        estado.innerHTML = `
-
-            <div class="status-icon">
-                🔎
-            </div>
-
-            <div>
-
-                <strong>
-                    Consultando disponibilidad...
-                </strong>
-
-                <span>
-                    Estamos verificando los turnos.
-                </span>
-
-            </div>
-
-        `;
-
-    }
-
 
     try {
 
         const url =
-            "/api/turnos?especialidad="
-            +
-            encodeURIComponent(
-                especialidadSeleccionada
-            );
-
+            `${API_TURNOS}?especialidad=${encodeURIComponent(
+                nombre
+            )}`;
 
         const respuesta =
             await fetch(url);
 
-
-        if (!respuesta.ok) {
-
-            throw new Error(
-                "Error al consultar turnos."
-            );
-
-        }
-
-
         const datos =
             await respuesta.json();
 
-
-        if (!datos.ok) {
+        if (
+            !respuesta.ok ||
+            !datos.ok
+        ) {
 
             throw new Error(
-                datos.mensaje
+                datos.mensaje ||
+                datos.error ||
+                "No se pudo consultar."
             );
 
         }
 
-
-        /*
-        -----------------------------------------------------
-        CUPOS
-        -----------------------------------------------------
-        */
-
-        if (cupos) {
-
-            cupos.textContent =
-                datos.cupo ?? 0;
-
-        }
-
-
-        /*
-        -----------------------------------------------------
-        HORA
-        -----------------------------------------------------
-        */
-
-        if (ultima) {
-
-            ultima.textContent =
-                obtenerHora(
-                    datos.ultima_actualizacion
-                );
-
-        }
-
-
-        /*
-        -----------------------------------------------------
-        ESTADO
-        -----------------------------------------------------
-        */
-
-        mostrarEstado(
+        mostrarResultado(
             datos
         );
 
-
-        /*
-        -----------------------------------------------------
-        BOTÓN
-        -----------------------------------------------------
-        */
-
-        if (boton) {
-
-            boton.classList.remove(
-                "disabled"
-            );
-
-        }
-
-
     } catch (error) {
 
-        console.error(
-            error
+        console.error(error);
+
+        mostrarResultadoError(
+            error.message
         );
-
-
-        mostrarError(
-            "No pudimos consultar los turnos.",
-            "Intentá actualizar nuevamente."
-        );
-
-
-        if (cupos) {
-
-            cupos.textContent =
-                "—";
-
-        }
-
-
-    } finally {
-
-        if (refresh) {
-
-            refresh.classList.remove(
-                "rotating"
-            );
-
-        }
 
     }
 
 }
 
 
-/* =========================================================
-   MOSTRAR ESTADO
-========================================================= */
+// ============================================================
+// MOSTRAR RESULTADO
+// ============================================================
 
-function mostrarEstado(
+function mostrarResultado(
     datos
 ) {
 
-    const container =
-        document.getElementById(
-            "estado-container"
+    resultado.classList.remove(
+        "hidden"
+    );
+
+    resultadoNombre.textContent =
+        datos.nombre;
+
+    cantidadCupos.textContent =
+        datos.cupo;
+
+    ultimaActualizacion.textContent =
+        datos.actualizado;
+
+
+    // Limpiar clases
+
+    estadoBadge.className =
+        "status-badge";
+
+
+    // DISPONIBLE
+
+    if (
+        datos.estado ===
+        "disponible"
+    ) {
+
+        estadoBadge.classList.add(
+            "available"
         );
 
+        estadoBadge.textContent =
+            "Disponible";
 
-    if (!container) {
+        estadoIcon.textContent =
+            "🎫";
 
-        return;
+        estadoTitulo.textContent =
+            "Hay turnos disponibles";
+
+        estadoMensaje.textContent =
+            datos.mensaje;
 
     }
 
 
-    /*
-    ---------------------------------------------------------
-    SUSPENDIDO
-    ---------------------------------------------------------
-    */
+    // POCOS CUPOS
 
-    if (datos.suspendido) {
+    else if (
+        datos.estado ===
+        "pocos"
+    ) {
 
-        container.className =
-            "status-box warning";
+        estadoBadge.classList.add(
+            "warning"
+        );
 
-        container.innerHTML = `
+        estadoBadge.textContent =
+            "Pocos cupos";
 
-            <div class="status-icon">
-                ⚠️
-            </div>
+        estadoIcon.textContent =
+            "⚠️";
 
-            <div>
+        estadoTitulo.textContent =
+            "Hay pocos turnos";
 
-                <strong>
-                    Especialidad suspendida
-                </strong>
-
-                <span>
-                    Por el momento no hay turnos disponibles.
-                </span>
-
-            </div>
-
-        `;
-
-        return;
+        estadoMensaje.textContent =
+            datos.mensaje;
 
     }
 
 
-    /*
-    ---------------------------------------------------------
-    DISPONIBLE
-    ---------------------------------------------------------
-    */
+    // SIN CUPOS
 
-    if (datos.disponible) {
+    else if (
+        datos.estado ===
+        "sin_cupos"
+    ) {
 
-        container.className =
-            "status-box success";
+        estadoBadge.classList.add(
+            "empty"
+        );
 
-        container.innerHTML = `
+        estadoBadge.textContent =
+            "Sin cupos";
 
-            <div class="status-icon">
-                ✓
-            </div>
+        estadoIcon.textContent =
+            "📭";
 
-            <div>
+        estadoTitulo.textContent =
+            "No hay turnos disponibles";
 
-                <strong>
-                    ¡Hay turnos disponibles!
-                </strong>
-
-                <span>
-                    ${datos.mensaje}
-                </span>
-
-            </div>
-
-        `;
-
-        return;
+        estadoMensaje.textContent =
+            datos.mensaje;
 
     }
 
 
-    /*
-    ---------------------------------------------------------
-    SIN TURNOS
-    ---------------------------------------------------------
-    */
+    // SUSPENDIDO
 
-    container.className =
-        "status-box danger";
+    else if (
+        datos.estado ===
+        "suspendido"
+    ) {
 
-    container.innerHTML = `
-
-        <div class="status-icon">
-            ×
-        </div>
-
-        <div>
-
-            <strong>
-                No hay turnos disponibles
-            </strong>
-
-            <span>
-                El sistema continúa verificando.
-            </span>
-
-        </div>
-
-    `;
-
-}
-
-
-/* =========================================================
-   ESTADO INICIAL
-========================================================= */
-
-function mostrarEstadoInicial() {
-
-    const container =
-        document.getElementById(
-            "estado-container"
+        estadoBadge.classList.add(
+            "suspended"
         );
 
+        estadoBadge.textContent =
+            "Suspendida";
 
-    const cupos =
-        document.getElementById(
-            "cupos"
-        );
+        estadoIcon.textContent =
+            "⏸️";
 
+        estadoTitulo.textContent =
+            "Especialidad suspendida";
 
-    const ultima =
-        document.getElementById(
-            "ultima-actualizacion"
-        );
-
-
-    const boton =
-        document.getElementById(
-            "boton-turno"
-        );
-
-
-    if (container) {
-
-        container.className =
-            "status-box neutral";
-
-        container.innerHTML = `
-
-            <div class="status-icon">
-                🔎
-            </div>
-
-            <div>
-
-                <strong>
-                    Seleccioná una especialidad
-                </strong>
-
-                <span>
-                    Te mostraremos si hay turnos disponibles.
-                </span>
-
-            </div>
-
-        `;
-
-    }
-
-
-    if (cupos) {
-
-        cupos.textContent =
-            "—";
-
-    }
-
-
-    if (ultima) {
-
-        ultima.textContent =
-            "—";
-
-    }
-
-
-    if (boton) {
-
-        boton.classList.add(
-            "disabled"
-        );
+        estadoMensaje.textContent =
+            datos.mensaje;
 
     }
 
 }
 
 
-/* =========================================================
-   ERROR
-========================================================= */
+// ============================================================
+// CARGANDO RESULTADO
+// ============================================================
 
-function mostrarError(
-    titulo,
+function mostrarResultadoCargando() {
+
+    resultadoNombre.textContent =
+        especialidadSeleccionada;
+
+    estadoBadge.className =
+        "status-badge warning";
+
+    estadoBadge.textContent =
+        "Consultando...";
+
+    estadoIcon.textContent =
+        "⏳";
+
+    estadoTitulo.textContent =
+        "Consultando disponibilidad...";
+
+    estadoMensaje.textContent =
+        "Estamos obteniendo la información actual.";
+
+    cantidadCupos.textContent =
+        "...";
+
+    ultimaActualizacion.textContent =
+        "...";
+
+}
+
+
+// ============================================================
+// ERROR RESULTADO
+// ============================================================
+
+function mostrarResultadoError(
     mensaje
 ) {
 
-    const container =
-        document.getElementById(
-            "estado-container"
-        );
+    resultado.classList.remove(
+        "hidden"
+    );
+
+    estadoBadge.className =
+        "status-badge empty";
+
+    estadoBadge.textContent =
+        "Error";
+
+    estadoIcon.textContent =
+        "⚠️";
+
+    estadoTitulo.textContent =
+        "No se pudo consultar";
+
+    estadoMensaje.textContent =
+        mensaje;
+
+    cantidadCupos.textContent =
+        "-";
+
+    ultimaActualizacion.textContent =
+        "-";
+
+}
 
 
-    if (!container) {
+// ============================================================
+// MOSTRAR ERROR GENERAL
+// ============================================================
 
-        return;
+function mostrarError(
+    mensaje
+) {
 
-    }
+    errorApi.classList.remove(
+        "hidden"
+    );
+
+    mensajeError.textContent =
+        mensaje;
+
+    listaEspecialidades.innerHTML =
+        "";
+
+    sinResultados.classList.add(
+        "hidden"
+    );
+
+}
 
 
-    container.className =
-        "status-box danger";
+// ============================================================
+// OCULTAR ERROR
+// ============================================================
+
+function ocultarError() {
+
+    errorApi.classList.add(
+        "hidden"
+    );
+
+}
 
 
-    container.innerHTML = `
+// ============================================================
+// MOSTRAR CARGANDO
+// ============================================================
 
-        <div class="status-icon">
-            ⚠️
-        </div>
+function mostrarCargando() {
 
-        <div>
+    listaEspecialidades.innerHTML = `
 
-            <strong>
-                ${titulo}
-            </strong>
+        <div class="loading-card">
 
-            <span>
-                ${mensaje}
-            </span>
+            <div class="spinner"></div>
+
+            <p>
+                Cargando especialidades...
+            </p>
 
         </div>
 
@@ -920,65 +742,168 @@ function mostrarError(
 }
 
 
-/* =========================================================
-   OBTENER HORA
-========================================================= */
+// ============================================================
+// CONEXIÓN
+// ============================================================
 
-function obtenerHora(
-    fecha
+function actualizarConexion(
+    clase,
+    texto
 ) {
 
-    if (!fecha) {
+    estadoConexion.className =
+        `connection-status ${clase}`;
 
-        return "—";
-
-    }
-
-
-    const partes =
-        fecha.split(" ");
-
-
-    if (
-        partes.length >= 2
-    ) {
-
-        return partes[1]
-            .substring(0, 5);
-
-    }
-
-
-    return fecha;
+    estadoConexion.textContent =
+        texto;
 
 }
 
 
-/* =========================================================
-   CAPITALIZAR
-========================================================= */
+// ============================================================
+// TARJETAS ACTIVAS
+// ============================================================
 
-function capitalizarTexto(
-    texto
-) {
+function actualizarTarjetasActivas() {
 
-    if (!texto) {
+    const tarjetas =
+        document.querySelectorAll(
+            ".specialty-card"
+        );
 
-        return "";
+    tarjetas.forEach(
+        tarjeta => {
+
+            tarjeta.classList.remove(
+                "active"
+            );
+
+            const nombre =
+                tarjeta.querySelector(
+                    ".specialty-card-name"
+                );
+
+            if (
+                nombre &&
+                nombre.textContent ===
+                especialidadSeleccionada
+            ) {
+
+                tarjeta.classList.add(
+                    "active"
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// RESTAURAR ESPECIALIDAD
+// ============================================================
+
+function restaurarEspecialidad() {
+
+    const guardada =
+        localStorage.getItem(
+            "turnoFacilEspecialidad"
+        );
+
+    if (!guardada) {
+        return;
+    }
+
+    const existe =
+        especialidades.some(
+            especialidad =>
+                especialidad.descripcion ===
+                guardada
+        );
+
+    if (existe) {
+
+        especialidadSeleccionada =
+            guardada;
+
+        actualizarTarjetasActivas();
 
     }
 
+}
 
-    /*
-    Mantiene siglas y palabras especiales
-    razonablemente legibles.
-    */
 
-    return texto
-        .toLowerCase()
-        .replace(
-            /(^|\s)\S/g,
-            letra => letra.toUpperCase()
+// ============================================================
+// WHATSAPP PREMIUM
+// ============================================================
+
+function actualizarWhatsApp(
+    especialidad
+) {
+
+    const mensaje =
+        `Hola, quiero información sobre ` +
+        `Turno Fácil Premium. ` +
+        `Me interesa monitorear la especialidad: ` +
+        `${especialidad}.`;
+
+    const url =
+        `https://wa.me/542634953664?text=` +
+        encodeURIComponent(
+            mensaje
         );
+
+    whatsappPremium.href =
+        url;
+
+    premiumMensaje.textContent =
+        `Podés consultarnos por WhatsApp ` +
+        `indicando que querés monitorear ` +
+        `"${especialidad}".`;
+
+}
+
+
+// ============================================================
+// ACTUALIZACIÓN AUTOMÁTICA
+// ============================================================
+
+setInterval(
+    async () => {
+
+        if (
+            especialidadSeleccionada
+        ) {
+
+            await consultarTurnos(
+                especialidadSeleccionada
+            );
+
+        }
+
+    },
+    INTERVALO_ACTUALIZACION
+);
+
+
+// ============================================================
+// ESCAPAR HTML
+// ============================================================
+
+function escaparHTML(
+    texto
+) {
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+    div.textContent =
+        texto;
+
+    return div.innerHTML;
 
 }
